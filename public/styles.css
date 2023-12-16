@@ -5,3 +5,14 @@
     bottom: 0;
     right: 0;
 }
+
+.mapBody {
+    user-select: none;
+  }
+  
+  /* Updated CSS for better cross-browser compatibility */
+.mapBody {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }

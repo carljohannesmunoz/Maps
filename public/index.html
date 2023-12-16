@@ -1,43 +1,38 @@
 <!DOCTYPE html>
-<html lang="eng">
+<html lang="en">
 <head>
-    <title>Leaflet Realtime</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoMap</title>
 
-    <!-- CSS file -->
-    <link rel="stylesheet" href="styles.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- Leaflet CSS file -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""/>
+    <!-- Leaflet Draw CSS (CDN) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
 
-    <!-- Make sure you put this AFTER Leaflet's CSS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""></script>    
-    <script src="../node_modules/leaflet-realtime/dist/leaflet-realtime.js"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.js"></script>
-
-    <link rel="stylesheet" href="../node_modules/leaflet-draw/dist/leaflet.draw.css">
-    <script src="../node_modules/leaflet-draw/dist/leaflet.draw.js"></script>
-
-    <link 
-    rel="stylesheet" 
-    href="http://leaflet.github.io/Leaflet.draw/leaflet.draw.css"
-    />
-
-    <script
-    src="http://leaflet.github.io/Leaflet.draw/leaflet.draw.js">
-    </script>
-
-    <style></style>
+    <!-- Your custom styles -->
+    <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+
+    <!-- Map container -->
     <div id="map"></div>
 
-    <script src="webapp.js"></script>
-    
+    <!-- Leaflet and other dependencies -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Leaflet Draw (CDN) -->
+    <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
+
+    <!-- Leaflet Realtime (CDN) -->
+    <script src="https://unpkg.com/leaflet-realtime/dist/leaflet-realtime.js"></script>
+
+    <!-- Your custom JavaScript -->
+
+
+    <script type="text/JavaScript" src="webapp.js"></script>
 </body>
 </html>

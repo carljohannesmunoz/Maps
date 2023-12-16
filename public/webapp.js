@@ -1,50 +1,138 @@
 var map = L.map('map').fitWorld().locate({ setView: true, maxZoom: 20 });
 
-var trail = {
-    type: 'Feature',
-    properties: {
-        id: 1
-    },
-    geometry: {
-        type: 'LineString',
-        coordinates: []
-    }
-};
-
-var geoJsonLayer = L.geoJSON([trail], {
-    style: function (feature) {
-        return { color: 'blue' }; // You can customize the style as needed
-    },
-    onEachFeature: function (feature, layer) {
-        if (feature.properties && feature.properties.popupContent) {
-            layer.bindPopup(feature.properties.popupContent);
-        }
-    }
-});
-
-var realtime = L.realtime(function (success, error) {
-    fetch('https://wanderdrone.appspot.com/')
-        .then(function (response) { return response.json(); })
-        .then(function (data) {
-            var trailCoords = trail.geometry.coordinates;
-            trailCoords.push(data.geometry.coordinates);
-            trailCoords.splice(0, Math.max(0, trailCoords.length - 5));
-
-            geoJsonLayer.clearLayers();
-            geoJsonLayer.addData([data, trail]);
-
-            success([data, trail]);
-        })
-        .catch(error);
-}, {
-    interval: 250,
-    removeMissing: true
-});
-
-realtime.addTo(map);
-
 var drawnItems = new L.FeatureGroup();
 map.addLayer(drawnItems);
+
+// Socket.io connection
+const socket = io.connect('http://localhost:3000', {
+    extraHeaders: {
+        'x-api-key': 'hEwHKab6KNtDdSZhytyoVwWtIgfVbBLKzsYomIypM5Wv1CvhUInlTvQQQewct7HxgXXmpoYLRKF9B3Wo4J9ihIvi1vG0vB4j14HIjLmWn8q8qvucwzhKShd3eEYtj7WW'
+    }
+});
+
+socket.on('connect', function () {
+    console.log('Socket.io connected');
+});
+
+socket.on('message', function (message) {
+    try {
+        const data = JSON.parse(message);
+        updateMapWithRealtimeData(data);
+    } catch (error) {
+        console.error('Error parsing Socket.io message:', error);
+    }
+});
+
+function updateMapWithRealtimeData(data) {
+    if (data && data.success && data.data) {
+        const drawnShapes = data.data;
+
+        drawnShapes.forEach(shape => {
+            if (shape.coordinates !== null) {
+                const coordinates = parseCoordinates(shape.coordinates);
+                console.log('Parsed coordinates:', coordinates);
+                
+                const geoJSON = {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: coordinates
+                    }
+                };
+                
+                const layer = L.geoJSON(geoJSON, {
+                    style: function (feature) {
+                        return { color: 'purple' };
+                    }
+                });
+                
+                drawnItems.addLayer(layer);
+
+
+                drawnItems.addLayer(layer);
+            } else {
+                console.warn('Shape with missing or null coordinates:', shape);
+            }
+        });
+
+        logDrawnItems();
+    } else {
+        console.error('Invalid data received from the server:', data);
+    }
+}
+
+// Function to parse coordinates
+function parseCoordinates(coordinatesString) {
+    try {
+        if (!coordinatesString) {
+            return [];
+        }
+
+        return coordinatesString
+            .replace('LINESTRING(', '')
+            .replace(')', '')
+            .split(',')
+            .map(coord => {
+                const [lng, lat] = coord.trim().split(' ');
+                return [parseFloat(lng), parseFloat(lat)];
+            });
+    } catch (error) {
+        console.error('Error parsing coordinates:', error);
+        return [];
+    }
+}
+
+// Function to fetch and display drawn shapes from the server
+function fetchAndDisplayDrawnShapes() {
+    fetch('/drawnShapes', {
+        headers: {
+            'x-api-key': 'hEwHKab6KNtDdSZhytyoVwWtIgfVbBLKzsYomIypM5Wv1CvhUInlTvQQQewct7HxgXXmpoYLRKF9B3Wo4J9ihIvi1vG0vB4j14HIjLmWn8q8qvucwzhKShd3eEYtj7WW', // Replace with the correct API key
+        },
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                drawnItems.clearLayers();
+
+                const drawnShapes = data.data;
+
+                drawnShapes.forEach(shape => {
+                    if (shape.coordinates) {
+                        const geoJSON = {
+                            type: 'Feature',
+                            properties: {},
+                            geometry: {
+                                type: 'LineString',
+                                coordinates: parseCoordinates(shape.coordinates)
+                            }
+                        };
+
+                        const layer = L.geoJSON(geoJSON, {
+                            style: function (feature) {
+                                return { color: 'purple' };
+                            }
+                        });
+
+                        drawnItems.addLayer(layer);
+                    } else {
+                        console.warn('Shape with missing or null coordinates:', shape);
+                    }
+                });
+
+                logDrawnItems();
+            } else {
+                console.error('Failed to fetch drawn shapes from the server:', data.error);
+            }
+        })
+        .catch(error => console.error('Error fetching drawn shapes:', error));
+}
+
+// WebSocket connection
+document.addEventListener('DOMContentLoaded', function () {
+    // Call the function to fetch and display drawn shapes when the page loads
+    fetchAndDisplayDrawnShapes();
+});
 
 var drawControl = new L.Control.Draw({
     position: "topright",
@@ -81,82 +169,155 @@ var drawControl = new L.Control.Draw({
                 color: 'steelblue'
             },
         },
+        marker: {
+            icon: new L.Icon.Default(),
+        },
+        circlemarker: {
+            shapeOptions: {
+                color: 'orange'
+            },
+        },
     },
     edit: {
         featureGroup: drawnItems
     }
 });
+
+// Add the 'draw:created' event listener
 map.addControl(drawControl);
-
 map.on("draw:created", function (e) {
-    var type = e.layerType,
-        layer = e.layer;
+    var layer = e.layer;
 
-    // Get the user-defined name for the polygon (you can replace 'YourPolygonName' with an actual name)
-    var polygonName = prompt("Enter polygon name:", "YourPolygonName");
+    if (isSupportedLayer(layer)) {
+        var shapeName = prompt("Enter shape name:", "ShapeName");
 
-    // Access the GeoJSON representation of the drawn shape
-    var geoJSON = layer.toGeoJSON();
+        var geoJSON = layer.toGeoJSON();
+        geoJSON.properties.name = shapeName;
 
-    // Add the name property to the GeoJSON feature
-    geoJSON.properties.name = polygonName;
+        var coordinates;
+        if (geoJSON.geometry.type === 'LineString' || geoJSON.geometry.type === 'MultiLineString') {
+            coordinates = geoJSON.geometry.coordinates.map(point => [point[1], point[0]]);
+        } else if (geoJSON.geometry.type === 'Polygon' || geoJSON.geometry.type === 'MultiPolygon') {
+            coordinates = geoJSON.geometry.coordinates[0].map(point => [point[0], point[1]]);
+        }        
 
-    // Log the GeoJSON to the console (you can remove this line in production)
-    console.log(geoJSON);
+        // Attach a popup to the drawn layer with GeoJSON information
+        layer.bindPopup(`<pre>${JSON.stringify(geoJSON, null, 2)}</pre>`).openPopup();
 
-    // Bind a popup with GeoJSON details to the drawn layer
-    layer.bindPopup(`<p>${JSON.stringify(geoJSON)}</p>`);
+        // Send data to the server
+        sendDataToServer(shapeName, coordinates);
 
-    // Add the layer to the drawnItems feature group
-    drawnItems.addLayer(layer);
+        drawnItems.addLayer(layer);
+        logDrawnItems();
+    } else {
+        console.warn('Unsupported layer type:', layer);
+    }
 });
 
+function isSupportedLayer(layer) {
+    return (
+        layer instanceof L.Polygon ||
+        layer instanceof L.Polyline ||
+        layer instanceof L.Rectangle ||
+        layer instanceof L.Circle ||
+        layer instanceof L.Marker ||
+        layer instanceof L.CircleMarker
+    );
+}
 
-map.on("draw:edited", function (e) {
-    var layers = e.layers;
-    var type = e.layerType;
+function sendDataToServer(type, coordinates) {
+    console.log('Sending drawn shape data:', { type, coordinates });
 
-    layers.eachLayer(function (layer) {
-        console.log(layer);
-    });
-});
+    // Check if coordinates are undefined or empty
+    if (!coordinates || coordinates.length === 0 || coordinates.some(coord => coord.some(isNaN))) {
+        console.error('Invalid coordinates:', coordinates);
+        return;
+    }
 
-realtime.on('update', function () {
-    map.fitBounds(realtime.getBounds(), { maxZoom: 3 });
-});
+    // Format the coordinates to be compatible with LINESTRING in WKT
+    const wktCoordinates = coordinates.map(coord => `${coord[1]} ${coord[0]}`).join(',');
 
-function onLocationFound(e) {
-    var radius = e.accuracy;
+    const data = {
+        name: type,
+        coordinates: `LINESTRING(${wktCoordinates})`,
+    };
 
-    var userMarker = L.marker(e.latlng).addTo(map)
-        .bindPopup(`Latitude: ${e.latlng.lat.toFixed(6)}<br>Longitude: ${e.latlng.lng.toFixed(6)}`).openPopup();
+    // Log the GeoJSON data before sending
+    console.log('GeoJSON Data:', JSON.stringify(data));
 
-    userMarker.on('click', function () {
-        // When the user's marker is clicked, get the latitude and longitude in GeoJSON format
-        var userGeoJSON = {
+    fetch('/drawnShapes', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': 'hEwHKab6KNtDdSZhytyoVwWtIgfVbBLKzsYomIypM5Wv1CvhUInlTvQQQewct7HxgXXmpoYLRKF9B3Wo4J9ihIvi1vG0vB4j14HIjLmWn8q8qvucwzhKShd3eEYtj7WW', // Replace with the correct API key
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(responseData => {
+        if (responseData.success) {
+            console.log('Drawn shape data sent to the server successfully:', responseData.data);
+
+            // Add the drawn shape to the map with popup
+            addShapeToMap(data);
+        } else {
+            console.error('Failed to send drawn shape data to the server:', responseData.error);
+        }
+    })
+    .catch(error => console.error('Error sending drawn shape data to the server:', error));
+}
+
+function addShapeToMap(data) {
+    try {
+        // Parse the coordinates from the data
+        const coordinates = parseCoordinates(data.coordinates);
+
+        // Create a GeoJSON feature
+        const geoJSON = {
             type: 'Feature',
             properties: {},
             geometry: {
-                type: 'Point',
-                coordinates: [e.latlng.lng, e.latlng.lat]
+                type: 'LineString',
+                coordinates: coordinates
             }
         };
 
-        console.log(userGeoJSON);
+        // Log GeoJSON to the console for debugging
+        console.log('GeoJSON:', geoJSON);
+
+        // Create a GeoJSON layer with style and bind popup
+        const layer = L.geoJSON(geoJSON, {
+            style: function (feature) {
+                return { color: 'purple' };
+            }
+        }).bindPopup(`<pre>${JSON.stringify(geoJSON, null, 2)}</pre>`);
+
+        // Add the layer to the drawnItems feature group
+        drawnItems.addLayer(layer);
+
+        // Open the popup
+        layer.openPopup();
+
+        // Log drawn items
+        logDrawnItems();
+    } catch (error) {
+        console.error('Error adding shape to map:', error);
+    }
+}
+
+function logDrawnItems() {
+    var data = [];
+    drawnItems.eachLayer(function (layer) {
+        data.push(layer.toGeoJSON());
     });
-
-    L.circle(e.latlng, radius).addTo(map);
+    console.log("Drawn items data:", data);
 }
 
-map.on('locationfound', onLocationFound);
-
-function onLocationError(e) {
-    alert(e.message);
+function flattenCoordinates(coordinates) {
+    return coordinates.map(coord => [coord[1], coord[0]]);
 }
+logDrawnItems();
 
-map.on('locationerror', onLocationError);
-
-// OSM layer
 var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 });
