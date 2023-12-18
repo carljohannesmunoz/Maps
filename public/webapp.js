@@ -225,8 +225,9 @@ function isSupportedLayer(layer) {
     );
 }
 
-function sendDataToServer(type, coordinates) {
-    console.log('Sending drawn shape data:', { type, coordinates });
+// Update the sendDataToServer function to include 'shapeName'
+function sendDataToServer(shapeName, type, coordinates) {
+    console.log('Sending drawn shape data:', { shapeName, type, coordinates });
 
     // Check if coordinates are undefined or empty
     if (!coordinates || coordinates.length === 0 || coordinates.some(coord => coord.some(isNaN))) {
@@ -238,7 +239,8 @@ function sendDataToServer(type, coordinates) {
     const wktCoordinates = coordinates.map(coord => `${coord[1]} ${coord[0]}`).join(',');
 
     const data = {
-        name: type,
+        shapeName, // Add shapeName to the data
+        type,
         coordinates: `LINESTRING(${wktCoordinates})`,
     };
 

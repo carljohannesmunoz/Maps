@@ -2,7 +2,6 @@ const express = require('express');
 const http = require('http');
 const mysql = require('mysql2/promise');
 const path = require('path');
-const cors = require('cors');
 const { Server } = require('socket.io'); // Import Socket.io
 
 const app = express();
@@ -15,14 +14,13 @@ const validApiKeys = ['hEwHKab6KNtDdSZhytyoVwWtIgfVbBLKzsYomIypM5Wv1CvhUInlTvQQQ
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, '..', 'public')));
-app.use(cors());
 
 // MySQL database configuration
 const dbConfig = {
     host: 'localhost',
-    user: 'trail_coordinates',
-    password: 'CarlMunoz09',
-    database: 'trail_coordinates',
+    user: '',
+    password: '',
+    database: '',
     port: '3306',
 };
 
@@ -43,18 +41,18 @@ async function insertTrailCoordinates(coordinates) {
 }
 
 // Function to insert drawn shapes into the database
-async function insertDrawnShape(type, coordinates) {
+async function insertDrawnShape(shapeName, type, coordinates) {
     console.log('Received coordinates for insertion:', coordinates);
 
     try {
         const connection = await mysql.createConnection(dbConfig);
 
         // Log the SQL query being executed
-        const sqlQuery = `INSERT INTO drawn_shapes (type, coordinates) VALUES (?, ST_GeomFromText(?))`;
+        const sqlQuery = `INSERT INTO drawn_shapes (shape_name, type, coordinates) VALUES (?, ?, ST_GeomFromText(?))`;
         console.log('Executing SQL Query:', sqlQuery);
 
         // Execute the SQL query
-        const [result] = await connection.execute(sqlQuery, [type, `LINESTRING(${coordinates.join(', ')})`]);
+        const [result] = await connection.execute(sqlQuery, [shapeName, type, `LINESTRING(${coordinates.join(', ')})`]);
 
         // Close the database connection
         await connection.end();
@@ -140,18 +138,18 @@ app.post('/gps', express.json(), async (req, res) => {
 app.post('/drawnShapes', async (req, res) => {
     try {
         // Check if the required properties are present in req.body
-        if (!req.body || !req.body.type || !req.body.coordinates) {
+        if (!req.body || !req.body.shapeName || !req.body.type || !req.body.coordinates) {
             console.error('Invalid drawn shape data received:', req.body);
             return res.status(400).json({ success: false, error: 'Invalid data received' });
         }
 
-        const { type, coordinates } = req.body;
+        const { shapeName, type, coordinates } = req.body;
 
         // Log the received data
-        console.log('Received drawn shape data:', { type, coordinates });
+        console.log('Received drawn shape data:', { shapeName, type, coordinates });
 
         // Insert the drawn shape into the database
-        await insertDrawnShape(type, coordinates);
+        await insertDrawnShape(shapeName, type, coordinates);
 
         // Respond to the client
         res.json({ success: true });
