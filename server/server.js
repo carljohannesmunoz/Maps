@@ -2,14 +2,14 @@ const express = require('express');
 const http = require('http');
 const mysql = require('mysql2/promise');
 const path = require('path');
-const { Server } = require('socket.io'); // Import Socket.io
+const { Server } = require('socket.io'); 
 
 const app = express();
 const port = 3000;
 const server = http.createServer(app);
 const io = new Server(server); // Create a Socket.io server
 
-// API keys (replace with your actual keys)
+// API keys 
 const validApiKeys = ['hEwHKab6KNtDdSZhytyoVwWtIgfVbBLKzsYomIypM5Wv1CvhUInlTvQQQewct7HxgXXmpoYLRKF9B3Wo4J9ihIvi1vG0vB4j14HIjLmWn8q8qvucwzhKShd3eEYtj7WW'];
 
 // Serve static files from the 'public' directory

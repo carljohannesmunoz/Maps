@@ -128,8 +128,9 @@ function fetchAndDisplayDrawnShapes() {
         .catch(error => console.error('Error fetching drawn shapes:', error));
 }
 
-// WebSocket connection
+
 document.addEventListener('DOMContentLoaded', function () {
+    
     // Call the function to fetch and display drawn shapes when the page loads
     fetchAndDisplayDrawnShapes();
 });
@@ -319,6 +320,36 @@ function flattenCoordinates(coordinates) {
     return coordinates.map(coord => [coord[1], coord[0]]);
 }
 logDrawnItems();
+
+function onLocationFound(e) {
+    var radius = e.accuracy;
+
+    var userMarker = L.marker(e.latlng).addTo(map)
+        .bindPopup(`Latitude: ${e.latlng.lat.toFixed(6)}<br>Longitude: ${e.latlng.lng.toFixed(6)}`).openPopup();
+
+    userMarker.on('click', function () {
+        var userGeoJSON = {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+                type: 'Point',
+                coordinates: [e.latlng.lng, e.latlng.lat]
+            }
+        };
+
+        console.log(userGeoJSON);
+    });
+
+    L.circle(e.latlng, radius).addTo(map);
+}
+
+map.on('locationfound', onLocationFound);
+
+function onLocationError(e) {
+    alert(e.message);
+}
+
+map.on('locationerror', onLocationError);
 
 var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
