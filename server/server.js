@@ -7,7 +7,7 @@ const { Server } = require('socket.io');
 const app = express();
 const port = 3000;
 const server = http.createServer(app);
-const io = new Server(server); // Create a Socket.io server
+const io = new Server(server); 
 
 // API keys 
 const validApiKeys = ['hEwHKab6KNtDdSZhytyoVwWtIgfVbBLKzsYomIypM5Wv1CvhUInlTvQQQewct7HxgXXmpoYLRKF9B3Wo4J9ihIvi1vG0vB4j14HIjLmWn8q8qvucwzhKShd3eEYtj7WW'];
