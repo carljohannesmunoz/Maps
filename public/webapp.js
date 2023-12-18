@@ -43,7 +43,7 @@ function updateMapWithRealtimeData(data) {
                 
                 const layer = L.geoJSON(geoJSON, {
                     style: function (feature) {
-                        return { color: 'purple' };
+                        return { color: 'red' };
                     }
                 });
                 
@@ -202,12 +202,12 @@ map.on("draw:created", function (e) {
         }        
 
         // Attach a popup to the drawn layer with GeoJSON information
-        layer.bindPopup(`<pre>${JSON.stringify(geoJSON, null, 2)}</pre>`).openPopup();
+        console.log(geoJSON);
 
-        // Send data to the server
-        sendDataToServer(shapeName, coordinates);
-
+        layer.bindPopup(`<p>${JSON.stringify(geoJSON)}</p>`);
         drawnItems.addLayer(layer);
+
+        sendDataToServer(shapeName, coordinates);
         logDrawnItems();
     } else {
         console.warn('Unsupported layer type:', layer);
@@ -284,21 +284,21 @@ function addShapeToMap(data) {
             }
         };
 
-        // Log GeoJSON to the console for debugging
-        console.log('GeoJSON:', geoJSON);
+        // // Log GeoJSON to the console for debugging
+        // console.log('GeoJSON:', geoJSON);
 
-        // Create a GeoJSON layer with style and bind popup
-        const layer = L.geoJSON(geoJSON, {
-            style: function (feature) {
-                return { color: 'purple' };
-            }
-        }).bindPopup(`<pre>${JSON.stringify(geoJSON, null, 2)}</pre>`);
+        // // Create a GeoJSON layer with style and bind popup
+        // const layer = L.geoJSON(geoJSON, {
+        //     style: function (feature) {
+        //         return { color: 'red' };
+        //     }
+        // }).bindPopup(`<pre>${JSON.stringify(geoJSON, null, 2)}</pre>`);
 
-        // Add the layer to the drawnItems feature group
-        drawnItems.addLayer(layer);
+        // // // Add the layer to the drawnItems feature group
+        // drawnItems.addLayer(layer);
 
-        // Open the popup
-        layer.openPopup();
+        // // Open the popup
+        // layer.openPopup();
 
         // Log drawn items
         logDrawnItems();
